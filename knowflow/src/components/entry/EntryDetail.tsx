@@ -46,23 +46,28 @@ export default function EntryDetail({ entry, onUpdate }: EntryDetailProps) {
     router.push('/');
   };
 
-  const hasPendingCards = Object.values(entry.cardStatus).some(s => s === 'pending' || s === 'failed');
+  const cardStatus = entry.cardStatus || { card1: 'pending', card2: 'pending', card3: 'pending', card4: 'pending' };
+  const angles = entry.angles || [];
+  const goldenQuotes = entry.goldenQuotes || [];
+  const tags = entry.tags || [];
+
+  const hasPendingCards = Object.values(cardStatus).some(s => s === 'pending' || s === 'failed');
 
   const cards = [
     { key: 'card1', title: t('detail.input'), content: entry.rawText },
-    { key: 'card2', title: t('detail.categorize'), content: entry.summary || entry.category },
+    { key: 'card2', title: t('detail.categorize'), content: entry.summary || entry.category || '' },
     {
       key: 'card3',
       title: t('detail.angles'),
-      content: entry.angles.length > 0
-        ? entry.angles.map(a => `${a.selected ? '☑' : '☐'} ${a.text}`).join('\n')
+      content: angles.length > 0
+        ? angles.map(a => `${a.selected ? '☑' : '☐'} ${a.text}`).join('\n')
         : '',
     },
     {
       key: 'card4',
       title: t('detail.extract'),
-      content: entry.goldenQuotes.length > 0
-        ? entry.goldenQuotes.map(q => `"${q.text}"`).join('\n')
+      content: goldenQuotes.length > 0
+        ? goldenQuotes.map(q => `"${q.text}"`).join('\n')
         : '',
     },
   ];
@@ -122,7 +127,7 @@ export default function EntryDetail({ entry, onUpdate }: EntryDetailProps) {
             key={card.key}
             className="flex-shrink-0 px-3 py-2 bg-gray-100 rounded-lg text-sm"
           >
-            {statusIcons[entry.cardStatus[card.key as keyof typeof entry.cardStatus]]}{' '}
+            {statusIcons[cardStatus[card.key as keyof typeof cardStatus]]}{' '}
             {card.title}
           </div>
         ))}
