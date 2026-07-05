@@ -1,51 +1,68 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { useUIStore } from '@/stores/uiStore';
 import { useEntryStore } from '@/stores/entryStore';
 import { useI18n } from '@/lib/i18n';
 import { ProcessingScenario } from '@/types/entry';
+import { processEntry } from '@/lib/ai/process';
 
 export default function CaptureModal() {
   const { isCaptureOpen, toggleCapture } = useUIStore();
-  const { createEntry } = useEntryStore();
+  const { createEntry, updateEntry } = useEntryStore();
   const { t } = useI18n();
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [rawText, setRawText] = useState('');
   const [sourceType, setSourceType] = useState<'paste' | 'url' | 'file' | 'manual'>('paste');
   const [scenario, setScenario] = useState<ProcessingScenario>('quick_capture');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleNext = () => setStep(2);
   const handleBack = () => setStep(1);
 
   const handleStart = async () => {
-    await createEntry({
-      userId: '',
-      title: rawText.slice(0, 50) + (rawText.length > 50 ? '...' : ''),
-      rawText,
-      language: 'en',
-      sourceType,
-      category: '',
-      tags: [],
-      summary: '',
-      keywords: [],
-      angles: [],
-      goldenQuotes: [],
-      extractedNodes: [],
-      cardStatus: {
-        card1: 'pending',
-        card2: 'pending',
-        card3: 'pending',
-        card4: 'pending',
-      },
-      scenario,
-      processingMode: 'local',
-    });
-    toggleCapture();
-    setStep(1);
-    setRawText('');
+    setIsProcessing(true);
+    try {
+      const entry = await createEntry({
+        userId: '',
+        title: rawText.slice(0, 50) + (rawText.length > 50 ? '...' : ''),
+        rawText,
+        language: 'en',
+        sourceType,
+        category: '',
+        tags: [],
+        summary: '',
+        keywords: [],
+        angles: [],
+        goldenQuotes: [],
+        extractedNodes: [],
+        cardStatus: {
+          card1: 'pending',
+          card2: 'pending',
+          card3: 'pending',
+          card4: 'pending',
+        },
+        scenario,
+        processingMode: 'local',
+      });
+
+      // Run processing pipeline
+      const updates = await processEntry(entry, scenario);
+      await updateEntry(entry.id, updates);
+
+      toggleCapture();
+      setStep(1);
+      setRawText('');
+      router.push(`/library/${entry.id}`);
+    } catch (error) {
+      console.error('Processing failed:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -117,7 +134,9 @@ export default function CaptureModal() {
             <Button variant="ghost" onClick={handleBack}>
               {t('capture.back')}
             </Button>
-            <Button onClick={handleStart}>{t('capture.start')}</Button>
+            <Button onClick={handleStart} disabled={isProcessing}>
+              {isProcessing ? t('capture.processing') || '处理中...' : t('capture.start')}
+            </Button>
           </div>
         </div>
       )}

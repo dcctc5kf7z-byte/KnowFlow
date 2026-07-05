@@ -35,11 +35,16 @@ export default function KnowledgeGraph() {
     }));
 
     const gLinks: GraphLink[] = [];
+    const linkSet = new Set<string>();
     nodes.forEach(node => {
       node.entryIds.forEach(entryId => {
         const targetNode = nodes.find(n => n.id !== node.id && n.entryIds.includes(entryId));
         if (targetNode) {
-          gLinks.push({ source: node.id, target: targetNode.id });
+          const linkKey = [node.id, targetNode.id].sort().join('-');
+          if (!linkSet.has(linkKey)) {
+            linkSet.add(linkKey);
+            gLinks.push({ source: node.id, target: targetNode.id });
+          }
         }
       });
     });
@@ -56,7 +61,7 @@ export default function KnowledgeGraph() {
     setGraphLinks([...gLinks as unknown as GraphLink[]]);
   }, [nodes, entries]);
 
-  if (entries.length === 0) {
+  if (nodes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <div className="text-6xl mb-4">🌱</div>
