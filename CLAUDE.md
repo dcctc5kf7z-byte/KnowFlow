@@ -113,3 +113,129 @@ Before proposing changes to skill design, workflow philosophy, or architecture, 
 - One problem per PR
 - Test on at least one harness and report results in the environment table
 - Describe the problem you solved, not just what you changed
+
+---
+
+# KnowFlow — Developer Log
+
+## Project Overview
+
+**KnowFlow** is a knowledge management tool that combines structured note-taking with AI-assisted knowledge organization. Users input scattered text → AI organizes, categorizes, recommends thinking angles, extracts essence, and connects to existing knowledge → visual knowledge graph.
+
+**Target audience:** Everyone. Core value is lowering the barrier to entry (unlike Obsidian which overwhelms beginners).
+
+**Business model:** Free basic processing (local rules), paid deep analysis (AI API credits). Monetize through AI API credits later.
+
+## Tech Stack
+
+- **Frontend:** React + Next.js + Tailwind CSS
+- **Backend/DB:** Supabase (free tier: 500MB DB + 1GB storage + 50K MAU)
+- **Local storage:** IndexedDB (Dexie.js)
+- **Deployment:** Vercel (free, automatic HTTPS)
+- **AI Integration:** OpenAI/Claude API, hybrid mode (local rules for basic, API for deep)
+- **PWA:** Installable to desktop, offline support
+
+## Design Decisions (2026-07-05)
+
+### Product Architecture
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Product form | Web app / PWA | No business license, deploy to Vercel |
+| Architecture | Card-based modular processing | User can skip/redo/adjust each card |
+| AI model | Hybrid (local rules + API) | Free tier works offline, paid tier for deep analysis |
+| Export | Copy as Markdown | Interop with Obsidian/Notion/Logseq |
+
+### Card Module System (4 Cards)
+
+1. **📥 输入与记录** — Store raw text, auto-detect language, suggest tags
+2. **🧩 归纳与分类** — Category, sub-category, tags, summary, keywords
+3. **❓ 推荐思考角度** — Recommended angles list (NOT mandatory questions). User selects what interests them.
+4. **🔬 提炼与关联** — Keywords + golden quotes (MVP). Not abstract "reusable frameworks".
+
+### Processing Scenarios (4)
+
+| Scene | Default Mode | Description |
+|-------|-------------|-------------|
+| 快速记录 | Local rules | Quick capture, minimal processing |
+| 深度消化 | AI API | Full analysis with all 4 cards |
+| 写作素材 | AI API | Focus on quotes, angles, structure |
+| 知识关联 | AI API | Focus on cross-entry connections |
+
+Mid-flow scenario switching is supported.
+
+### Data Model
+
+Three core entities: **Entry**, **Node**, **Link**.
+
+- **Entry:** Contains all card outputs (summary, keywords, quotes, angles, cardStatus). Not separate tables per card.
+- **Node:** Reusable knowledge units (keyword, concept, person, tool, other). Can be referenced by multiple entries.
+- **Link:** Relationships between nodes. Weight (1-5) is AI-generated, user-adjustable.
+- **Angle:** Embedded in Entry (not independent entity). Future migration path documented.
+- **Soft delete:** `deletedAt` on Entry and Node. Deleting Entry doesn't delete its Nodes.
+- **Sync status:** All three entities have `syncStatus: "local" | "synced" | "pending"`.
+- **Source metadata:** `sourceUrl` and `sourceType` on Entry for data provenance.
+
+### UI/UX Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Navigation | `KnowFlow [+] [🔍] [⚙️]` | Search is core scenario, FAB for quick capture |
+| Home page | Knowledge library + FAB modal | User sees their content first, not empty capture form |
+| Entry detail | Step bar + expandable cards | Full process visibility, no blocking |
+| Knowledge graph | Progressive (seed → sprout → full) | Avoid empty-state frustration |
+| Empty graph | ≤2 entries = seed, 3-7 = sprout, ≥8 = full | Gradual unlock with animations |
+| Smart grouping | 本周新捕获 / 高频回顾 / 待关联孤儿 | Hide empty groups |
+| Draft storage | IndexedDB + Supabase sync for logged-in users | 30-day retention, auto-cleanup |
+| Degradation | Auto-fallback to local mode on API failure | Silent degradation, manual + auto recovery |
+
+### AI Integration
+
+- **Mode A (Local):** TF-IDF keyword extraction, template-based categorization, rule-based processing. Free, offline.
+- **Mode B (API):** Semantic analysis via OpenAI/Claude. Requires user's own API key. Cost displayed before each call.
+- **Fallback:** API failure → auto-degrade to local mode. Status shown as `[🔴 降级模式]`. Auto-recovery on next page visit (3 consecutive successes).
+- **Budget control:** User sets monthly API call limit. Cost estimated per-card before processing.
+
+### Card Status States
+
+```
+[✅ 已完成]    — User confirmed output
+[🔄 处理中]    — AI processing (with progress bar)
+[⏸ 待处理]    — Waiting for prerequisite card
+[⚠️ 已降级]    — API failed, using local mode
+[❌ 失败]      — Processing failed, retry available
+```
+
+### Responsive Breakpoints
+
+- **Desktop (≥1024px):** Left filter sidebar + 3-column card grid
+- **Tablet (768-1023px):** Top filter bar + 2-column grid
+- **Mobile (<768px):** Bottom Tab bar with central FAB, 1-column list, bottom Sheet for modals
+
+### PWA Configuration
+
+- Service Worker: Cache First for static assets, Network First for API requests
+- AI API calls: Never cached
+- Installable as standalone app
+
+## Routes
+
+```
+/              → Knowledge library (smart grouping + multi-view)
+/graph         → Knowledge graph (progressive experience)
+/settings      → Settings (grouped: quick ops → AI config → data mgmt → advanced)
+[+] FAB        → Capture modal (two-step: capture → process)
+/library/:id   → Entry detail (step bar + expandable cards)
+```
+
+## Open Questions
+
+- [ ] Node type "keyword" vs "concept" boundary — need UI examples to help users distinguish
+- [ ] Interval repetition algorithm choice (SM-2? Custom?)
+- [ ] Batch processing queue implementation details
+- [ ] Conflict resolution UI for cloud sync
+
+## Next Steps
+
+- [ ] Write full design spec to `docs/superpowers/specs/2026-07-05-knowflow-design.md`
+- [ ] Transition to `writing-plans` skill for implementation plan

@@ -1,0 +1,16 @@
+{
+  "name": "KnowFlow",
+  "short_name": "KnowFlow",
+  "description": "Knowledge management tool with AI assistance",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

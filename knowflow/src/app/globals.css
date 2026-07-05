@@ -24,3 +24,35 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none;
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 1024px) {
+  .show-on-desktop {
+    display: block;
+  }
+}

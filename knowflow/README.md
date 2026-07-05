@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KnowFlow
+
+A knowledge management tool with AI assistance. Lower the barrier to entry compared to tools like Obsidian.
+
+## Features
+
+- **Card-based Processing:** 4-step workflow for organizing knowledge
+- **Offline-First:** Works without internet, syncs when online
+- **AI Integration:** Hybrid mode with local rules and API fallback
+- **Knowledge Graph:** Visualize connections between ideas
+- **PWA Support:** Install to desktop, works offline
+
+## Tech Stack
+
+- React 19 + Next.js 16 (App Router)
+- TypeScript 5
+- Tailwind CSS 4
+- Dexie.js 4 (IndexedDB)
+- Supabase JS 2
+- Zustand 5
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- Supabase account (free tier)
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd knowflow
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Development
 
-## Learn More
+```bash
+# Start dev server
+npm run dev
 
-To learn more about Next.js, take a look at the following resources:
+# Build for production
+npm run build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Start production server
+npm start
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Run tests
+npm test
 
-## Deploy on Vercel
+# Lint code
+npm run lint
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+knowflow/
+├── src/
+│   ├── app/              # Next.js App Router pages
+│   ├── components/       # React components
+│   ├── lib/              # Utilities and services
+│   ├── stores/           # Zustand state management
+│   └── types/            # TypeScript type definitions
+├── public/               # Static assets
+├── supabase/             # Edge Functions
+└── tests/                # Test files
+```
+
+## License
+
+MIT
