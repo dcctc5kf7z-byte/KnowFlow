@@ -30,6 +30,7 @@ const CLUSTER_COLORS: Record<string, string> = {
   person: '#10b981',
   tool: '#f59e0b',
   other: '#6b7280',
+  entry: '#ef4444',
   default: '#3b82f6',
 };
 
@@ -39,6 +40,7 @@ const CLUSTER_LABELS: Record<string, string> = {
   person: '人物',
   tool: '工具',
   other: '其他',
+  entry: '条目',
 };
 
 export default function KnowledgeGraph() {
@@ -58,66 +60,122 @@ export default function KnowledgeGraph() {
 
   // Build graph data
   useEffect(() => {
-    if (nodes.length === 0) {
+    if (nodes.length === 0 && entries.length === 0) {
       setGraphNodes([]);
       setGraphLinks([]);
       return;
     }
 
-    // Calculate node degrees
-    const degreeMap = new Map<string, number>();
-    const linkSet = new Set<string>();
+    const gNodes: GraphNode[] = [];
+    const gLinks: GraphLink[] = [];
+    const linkSeen = new Set<string>();
 
+    // 1. Add keyword/concept/etc nodes from node store
+    nodes.forEach(n => {
+      gNodes.push({
+        id: n.id,
+        label: n.label,
+        type: n.type,
+        entryIds: n.entryIds,
+        degree: 0,
+        cluster: n.type,
+      });
+    });
+
+    // 2. Add entry nodes
+    entries.forEach(entry => {
+      gNodes.push({
+        id: `entry-${entry.id}`,
+        label: entry.title.length > 15 ? entry.title.slice(0, 13) + '...' : entry.title,
+        type: 'entry',
+        entryIds: [entry.id],
+        degree: 0,
+        cluster: 'entry',
+      });
+    });
+
+    // 3. Link keyword nodes to each other (share same entry)
     nodes.forEach(node => {
       node.entryIds.forEach(entryId => {
         nodes.forEach(other => {
           if (other.id === node.id) return;
           if (other.entryIds.includes(entryId)) {
             const key = [node.id, other.id].sort().join('-');
-            if (!linkSet.has(key)) {
-              linkSet.add(key);
-              degreeMap.set(node.id, (degreeMap.get(node.id) || 0) + 1);
-              degreeMap.set(other.id, (degreeMap.get(other.id) || 0) + 1);
+            if (!linkSeen.has(key)) {
+              linkSeen.add(key);
+              gLinks.push({ source: node.id, target: other.id, weight: 1 });
             }
           }
         });
       });
     });
 
-    const gNodes: GraphNode[] = nodes.map(n => ({
-      id: n.id,
-      label: n.label,
-      type: n.type,
-      entryIds: n.entryIds,
-      degree: degreeMap.get(n.id) || 0,
-      cluster: n.type,
-    }));
+    // 4. Link entry nodes to their keyword nodes
+    entries.forEach(entry => {
+      const entryNodeId = `entry-${entry.id}`;
+      const entryKeywords = entry.keywords || [];
+      const extractedNodeIds = entry.extractedNodes || [];
 
-    const gLinks: GraphLink[] = [];
-    const linkSeen = new Set<string>();
-    nodes.forEach(node => {
-      node.entryIds.forEach(entryId => {
-        const targetNode = nodes.find(n => n.id !== node.id && n.entryIds.includes(entryId));
-        if (targetNode) {
-          const linkKey = [node.id, targetNode.id].sort().join('-');
-          if (!linkSeen.has(linkKey)) {
-            linkSeen.add(linkKey);
-            gLinks.push({
-              source: node.id,
-              target: targetNode.id,
-              weight: 1,
-            });
+      // Link to extracted nodes
+      extractedNodeIds.forEach(nodeId => {
+        const key = [entryNodeId, nodeId].sort().join('-');
+        if (!linkSeen.has(key)) {
+          linkSeen.add(key);
+          gLinks.push({ source: entryNodeId, target: nodeId, weight: 2 });
+        }
+      });
+
+      // Link to keyword nodes by label match
+      entryKeywords.forEach(kw => {
+        const matchingNode = nodes.find(n => n.label.toLowerCase() === kw.toLowerCase());
+        if (matchingNode) {
+          const key = [entryNodeId, matchingNode.id].sort().join('-');
+          if (!linkSeen.has(key)) {
+            linkSeen.add(key);
+            gLinks.push({ source: entryNodeId, target: matchingNode.id, weight: 2 });
           }
         }
       });
     });
 
+    // 5. Link entry nodes to other entry nodes (wiki-links)
+    entries.forEach(entry => {
+      const entryNodeId = `entry-${entry.id}`;
+      const linkedIds = entry.linkedEntryIds || [];
+
+      linkedIds.forEach(linkedId => {
+        const targetNodeId = `entry-${linkedId}`;
+        const key = [entryNodeId, targetNodeId].sort().join('-');
+        if (!linkSeen.has(key)) {
+          linkSeen.add(key);
+          gLinks.push({ source: entryNodeId, target: targetNodeId, weight: 3 });
+        }
+      });
+    });
+
+    // Calculate degrees
+    const degreeMap = new Map<string, number>();
+    gLinks.forEach(link => {
+      const src = typeof link.source === 'string' ? link.source : (link.source as GraphNode).id;
+      const tgt = typeof link.target === 'string' ? link.target : (link.target as GraphNode).id;
+      degreeMap.set(src, (degreeMap.get(src) || 0) + 1);
+      degreeMap.set(tgt, (degreeMap.get(tgt) || 0) + 1);
+    });
+    gNodes.forEach(n => { n.degree = degreeMap.get(n.id) || 0; });
+
     // Run simulation
     const simulation = forceSimulation(gNodes)
       .force('link', forceLink<GraphNode, GraphLink>(gLinks)
         .id(d => d.id)
-        .distance(120))
-      .force('charge', forceManyBody().strength(-300))
+        .distance(d => {
+          const src = typeof d.source === 'string' ? gNodes.find(n => n.id === d.source) : d.source as GraphNode;
+          const tgt = typeof d.target === 'string' ? gNodes.find(n => n.id === d.target) : d.target as GraphNode;
+          // Entry-to-entry links shorter, entry-to-keyword medium, keyword-keyword longer
+          if (src?.type === 'entry' && tgt?.type === 'entry') return 100;
+          if (src?.type === 'entry' || tgt?.type === 'entry') return 120;
+          return 150;
+        }))
+      .force('charge', forceManyBody().strength(d => (d as GraphNode).type === 'entry' ? -200 : -300))
       .force('center', forceCenter(400, 300))
       .force('collide', forceCollide().radius(d => getNodeRadius(d as GraphNode) + 10))
       .stop();
@@ -161,7 +219,12 @@ export default function KnowledgeGraph() {
   }, [hoveredNode, selectedNode]);
 
   const handleNodeClick = useCallback((node: GraphNode) => {
-    if (node.entryIds.length > 0) {
+    if (node.type === 'entry') {
+      // Entry node: navigate to entry detail
+      const entryId = node.entryIds[0];
+      if (entryId) router.push(`/library/${entryId}`);
+    } else if (node.entryIds.length > 0) {
+      // Keyword node: navigate to first associated entry
       router.push(`/library/${node.entryIds[0]}`);
     }
   }, [router]);
@@ -190,7 +253,7 @@ export default function KnowledgeGraph() {
   }, []);
 
   // Empty state
-  if (nodes.length === 0) {
+  if (nodes.length === 0 && entries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <div className="text-6xl mb-4">🌱</div>
@@ -209,7 +272,9 @@ export default function KnowledgeGraph() {
       {/* Controls */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">{nodes.length} 个节点</span>
+          <span className="text-sm text-gray-500">{entries.length} 个条目</span>
+          <span className="text-gray-300">·</span>
+          <span className="text-sm text-gray-500">{nodes.length} 个知识点</span>
           <span className="text-gray-300">·</span>
           <span className="text-sm text-gray-500">{graphLinks.length} 条连接</span>
         </div>
@@ -304,6 +369,7 @@ export default function KnowledgeGraph() {
             const color = getNodeColor(node);
             const highlighted = isNodeHighlighted(node.id);
             const isActive = node.id === (hoveredNode || selectedNode);
+            const isEntry = node.type === 'entry';
 
             return (
               <g
@@ -327,17 +393,33 @@ export default function KnowledgeGraph() {
                   />
                 )}
 
-                {/* Main circle */}
-                <circle
-                  cx={node.x}
-                  cy={node.y}
-                  r={radius}
-                  fill={color}
-                  className="transition-all duration-200"
-                  style={{
-                    filter: isActive ? `drop-shadow(0 0 6px ${color})` : 'none',
-                  }}
-                />
+                {/* Entry nodes: rounded rectangle; keyword nodes: circle */}
+                {isEntry ? (
+                  <rect
+                    x={(node.x || 0) - radius * 1.4}
+                    y={(node.y || 0) - radius * 0.9}
+                    width={radius * 2.8}
+                    height={radius * 1.8}
+                    rx={6}
+                    ry={6}
+                    fill={color}
+                    className="transition-all duration-200"
+                    style={{
+                      filter: isActive ? `drop-shadow(0 0 6px ${color})` : 'none',
+                    }}
+                  />
+                ) : (
+                  <circle
+                    cx={node.x}
+                    cy={node.y}
+                    r={radius}
+                    fill={color}
+                    className="transition-all duration-200"
+                    style={{
+                      filter: isActive ? `drop-shadow(0 0 6px ${color})` : 'none',
+                    }}
+                  />
+                )}
 
                 {/* Label */}
                 <text
@@ -347,11 +429,11 @@ export default function KnowledgeGraph() {
                   className="text-xs pointer-events-none select-none"
                   style={{
                     fill: highlighted ? '#374151' : '#9ca3af',
-                    fontSize: '11px',
-                    fontWeight: isActive ? '600' : '400',
+                    fontSize: isEntry ? '12px' : '11px',
+                    fontWeight: isActive || isEntry ? '600' : '400',
                   }}
                 >
-                  {node.label.length > 12 ? node.label.slice(0, 10) + '...' : node.label}
+                  {node.label.length > 15 ? node.label.slice(0, 13) + '...' : node.label}
                 </text>
               </g>
             );
@@ -364,11 +446,16 @@ export default function KnowledgeGraph() {
             {(() => {
               const node = graphNodes.find(n => n.id === hoveredNode);
               if (!node) return null;
+              const isEntry = node.type === 'entry';
+              const fullLabel = isEntry
+                ? entries.find(e => `entry-${e.id}` === node.id)?.title || node.label
+                : node.label;
               return (
                 <>
-                  <div className="font-medium">{node.label}</div>
+                  <div className="font-medium">{fullLabel}</div>
                   <div className="text-gray-500 text-xs mt-1">
-                    {CLUSTER_LABELS[node.type] || node.type} · {node.degree} 条连接 · {node.entryIds.length} 个条目
+                    {CLUSTER_LABELS[node.type] || node.type} · {node.degree} 条连接
+                    {isEntry ? '' : ` · ${node.entryIds.length} 个条目`}
                   </div>
                 </>
               );
