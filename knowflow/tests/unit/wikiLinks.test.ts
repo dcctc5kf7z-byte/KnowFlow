@@ -179,7 +179,7 @@ describe('Wiki-Links', () => {
 
     it('converts resolved link to markdown link', () => {
       const md = wikiLinksToMarkdown('See [[React Hooks]] here.', entries);
-      expect(md).toBe('See [React Hooks](/library/id-react) here.');
+      expect(md).toBe('See [React Hooks](/library/?id=id-react) here.');
     });
 
     it('converts unresolved link to # href', () => {
@@ -189,12 +189,12 @@ describe('Wiki-Links', () => {
 
     it('preserves alias in display text', () => {
       const md = wikiLinksToMarkdown('See [[React Hooks|hooks]] here.', entries);
-      expect(md).toBe('See [hooks](/library/id-react) here.');
+      expect(md).toBe('See [hooks](/library/?id=id-react) here.');
     });
 
     it('converts multiple links', () => {
       const md = wikiLinksToMarkdown('[[React Hooks]] and [[Vue]]', entries);
-      expect(md).toBe('[React Hooks](/library/id-react) and [Vue](/library/id-vue)');
+      expect(md).toBe('[React Hooks](/library/?id=id-react) and [Vue](/library/?id=id-vue)');
     });
 
     it('returns original text when no links', () => {

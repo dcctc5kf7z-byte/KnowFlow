@@ -39,7 +39,7 @@ export default function SearchModal() {
 
   const handleSelect = (result: SearchResult) => {
     if (result.type === 'entry') {
-      router.push(`/library/${result.id}`);
+      router.push(`/library/?id=${result.id}`);
     } else if (result.type === 'node') {
       // TODO: Navigate to node detail
     }

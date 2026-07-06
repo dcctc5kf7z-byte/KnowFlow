@@ -67,7 +67,7 @@ export default function CaptureModal() {
       toggleCapture();
       setStep(1);
       setRawText('');
-      router.push(`/library/${entry.id}`);
+      router.push(`/library/?id=${entry.id}`);
     } catch (error) {
       console.error('Processing failed:', error);
     } finally {

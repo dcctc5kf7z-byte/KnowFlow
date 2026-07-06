@@ -404,7 +404,7 @@ export default function EntryDetail({ entry, onUpdate }: EntryDetailProps) {
             {linkedEntries.map(linked => (
               <button
                 key={linked.id}
-                onClick={() => router.push(`/library/${linked.id}`)}
+                onClick={() => router.push(`/library/?id=${linked.id}`)}
                 className="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors group"
               >
                 <div className="text-sm font-medium text-blue-600 group-hover:text-blue-800">
@@ -429,7 +429,7 @@ export default function EntryDetail({ entry, onUpdate }: EntryDetailProps) {
             {backlinks.map(bl => (
               <button
                 key={bl.entryId}
-                onClick={() => router.push(`/library/${bl.entryId}`)}
+                onClick={() => router.push(`/library/?id=${bl.entryId}`)}
                 className="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors group"
               >
                 <div className="text-sm font-medium text-blue-600 group-hover:text-blue-800">

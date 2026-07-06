@@ -39,7 +39,7 @@ export default function EntryCard({ entry }: EntryCardProps) {
 
   return (
     <div className="relative group">
-      <Link href={`/library/${entry.id}`}>
+      <Link href={`/library/?id=${entry.id}`}>
         <div className="p-4 bg-white border rounded-lg hover:shadow-md transition-all cursor-pointer min-h-[140px] flex flex-col">
           {/* Top row: title + status */}
           <div className="flex items-start justify-between gap-2">

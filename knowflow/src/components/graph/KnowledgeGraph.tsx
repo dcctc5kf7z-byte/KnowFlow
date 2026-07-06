@@ -222,10 +222,10 @@ export default function KnowledgeGraph() {
     if (node.type === 'entry') {
       // Entry node: navigate to entry detail
       const entryId = node.entryIds[0];
-      if (entryId) router.push(`/library/${entryId}`);
+      if (entryId) router.push(`/library/?id=${entryId}`);
     } else if (node.entryIds.length > 0) {
       // Keyword node: navigate to first associated entry
-      router.push(`/library/${node.entryIds[0]}`);
+      router.push(`/library/?id=${node.entryIds[0]}`);
     }
   }, [router]);
 

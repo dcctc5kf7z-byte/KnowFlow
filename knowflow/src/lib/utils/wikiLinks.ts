@@ -126,7 +126,7 @@ export function wikiLinksToMarkdown(text: string, entries: Entry[]): string {
       e => e.title.toLowerCase() === title.trim().toLowerCase()
     );
     if (entry) {
-      return `[${display}](/library/${entry.id})`;
+      return `[${display}](/library/?id=${entry.id})`;
     }
     return `[${display}](#)`; // Unresolved link
   });
