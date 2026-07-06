@@ -55,3 +55,40 @@ export function downloadFile(content: string, filename: string, mimeType: string
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+/** Alias for settings page */
+export const exportAllData = exportAsJSON;
+
+/** Import data from JSON export */
+export async function importData(jsonText: string): Promise<{ entries: number; nodes: number }> {
+  const data = JSON.parse(jsonText);
+
+  if (!data.entries || !Array.isArray(data.entries)) {
+    throw new Error('Invalid export format');
+  }
+
+  let importedEntries = 0;
+  let importedNodes = 0;
+
+  // Import entries (skip duplicates by id)
+  for (const entry of data.entries) {
+    const existing = await db.entries.get(entry.id);
+    if (!existing) {
+      await db.entries.add(entry);
+      importedEntries++;
+    }
+  }
+
+  // Import nodes (skip duplicates by id)
+  if (data.nodes && Array.isArray(data.nodes)) {
+    for (const node of data.nodes) {
+      const existing = await db.nodes.get(node.id);
+      if (!existing) {
+        await db.nodes.add(node);
+        importedNodes++;
+      }
+    }
+  }
+
+  return { entries: importedEntries, nodes: importedNodes };
+}

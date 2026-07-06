@@ -17,6 +17,23 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
   useEffect(() => {
     initLanguage();
     startSyncListener();
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.warn('SW registration failed:', err);
+      });
+    }
+
+    // Track online/offline status
+    const handleOnline = () => useUIStore.getState().setOnline(true);
+    const handleOffline = () => useUIStore.getState().setOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [initLanguage]);
 
   return (

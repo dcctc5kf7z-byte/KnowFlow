@@ -57,6 +57,21 @@ body {
   }
 }
 
+/* Safe area for iOS notch/home indicator */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Tap highlight removal for mobile */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent overscroll bounce on iOS */
+html, body {
+  overscroll-behavior: none;
+}
+
 /* Markdown / Prose styling */
 .prose {
   line-height: 1.7;
