@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { useEntryStore } from '@/stores/entryStore';
 import { useI18n } from '@/lib/i18n';
 import EntryCard from '@/components/entry/EntryCard';
+import DailyDigest from '@/components/digest/DailyDigest';
 
 export default function HomePage() {
   const { entries, isLoading, loadEntries } = useEntryStore();
@@ -65,6 +66,9 @@ export default function HomePage() {
 
   return (
     <div className="p-4 max-w-5xl mx-auto">
+      {/* Daily Digest — AI-powered knowledge review */}
+      <DailyDigest />
+
       {/* Stats bar */}
       <div className="mb-6 flex items-center gap-4 text-sm text-gray-500">
         <span>{entries.length} 个条目</span>
