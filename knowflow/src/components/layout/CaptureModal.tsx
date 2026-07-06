@@ -40,6 +40,8 @@ export default function CaptureModal() {
         angles: [],
         goldenQuotes: [],
         extractedNodes: [],
+        linkedEntryIds: [],
+        markdownContent: '',
         cardStatus: {
           card1: 'pending',
           card2: 'pending',

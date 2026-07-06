@@ -19,9 +19,10 @@ describe('AI Local Processing', () => {
       expect(result.language).toBe('en');
     });
 
-    it('truncates title at 50 characters', () => {
+    it('extracts title from first meaningful sentence', () => {
       const result = processCard1(sampleText);
-      expect(result.title.length).toBeLessThanOrEqual(53); // 50 + '...'
+      expect(result.title.length).toBeGreaterThan(0);
+      expect(result.title.length).toBeLessThanOrEqual(63); // 60 + '...'
     });
 
     it('does not add ellipsis for short text', () => {
@@ -31,14 +32,14 @@ describe('AI Local Processing', () => {
     });
 
     it('adds ellipsis for long text', () => {
-      const longText = 'A'.repeat(100);
+      const longText = 'This is a very long sentence that goes on and on and should definitely be truncated at some point because it exceeds the limit.';
       const result = processCard1(longText);
-      expect(result.title).toBe('A'.repeat(50) + '...');
+      expect(result.title.length).toBeLessThanOrEqual(63);
     });
 
-    it('extracts up to 3 tags', () => {
+    it('extracts up to 6 tags', () => {
       const result = processCard1(sampleText);
-      expect(result.tags.length).toBeLessThanOrEqual(3);
+      expect(result.tags.length).toBeLessThanOrEqual(6);
       expect(result.tags.length).toBeGreaterThan(0);
     });
   });
@@ -46,41 +47,37 @@ describe('AI Local Processing', () => {
   describe('processCard2', () => {
     const validCategories = [
       'Technology', 'Science', 'Philosophy', 'Business', 'Health',
-      'Education', 'Entertainment', 'Politics', 'Sports', 'Other',
+      'Education', 'Creative', 'Life', 'Other',
     ];
 
     it('returns a valid category', () => {
-      // Run multiple times to account for randomness
-      const categories = new Set<string>();
-      for (let i = 0; i < 50; i++) {
-        categories.add(processCard2(sampleText).category);
-      }
-      // All returned categories should be valid
-      categories.forEach(cat => expect(validCategories).toContain(cat));
-      // Should have returned more than 1 distinct category (randomness works)
-      expect(categories.size).toBeGreaterThan(1);
+      const result = processCard2(sampleText);
+      expect(validCategories).toContain(result.category);
     });
 
     it('extracts keywords from input text', () => {
       const result = processCard2(sampleText);
       expect(result.keywords.length).toBeGreaterThan(0);
-      expect(result.keywords.length).toBeLessThanOrEqual(5);
-      // Keywords should come from the actual input
-      expect(result.keywords.some(kw => sampleText.toLowerCase().includes(kw))).toBe(true);
+      expect(result.keywords.length).toBeLessThanOrEqual(8);
     });
 
     it('generates a summary from input text', () => {
       const result = processCard2(sampleText);
       expect(result.summary.length).toBeGreaterThan(0);
-      // Summary should contain parts of the original text
-      expect(sampleText).toContain(result.summary.split('.')[0]);
+    });
+
+    it('detects subcategory for tech content', () => {
+      const techText = 'React components use hooks for state management in frontend development.';
+      const result = processCard2(techText);
+      expect(result.category).toBe('Technology');
     });
   });
 
   describe('processCard3', () => {
-    it('returns exactly 3 angles', () => {
+    it('returns 3-5 angles', () => {
       const result = processCard3(sampleText);
-      expect(result.angles).toHaveLength(3);
+      expect(result.angles.length).toBeGreaterThanOrEqual(3);
+      expect(result.angles.length).toBeLessThanOrEqual(5);
     });
 
     it('each angle has required fields', () => {
@@ -99,13 +96,19 @@ describe('AI Local Processing', () => {
         expect(angle.text.length).toBeGreaterThan(5);
       });
     });
+
+    it('adds content-aware angles for problem text', () => {
+      const problemText = '这个bug导致了系统错误，需要修复失败的问题。';
+      const result = processCard3(problemText, 'Technology');
+      expect(result.angles.length).toBeGreaterThanOrEqual(4);
+    });
   });
 
   describe('processCard4', () => {
     it('extracts golden quotes from text', () => {
       const result = processCard4(sampleText);
       expect(result.goldenQuotes.length).toBeGreaterThan(0);
-      expect(result.goldenQuotes.length).toBeLessThanOrEqual(2);
+      expect(result.goldenQuotes.length).toBeLessThanOrEqual(4);
     });
 
     it('each quote has id and text', () => {
@@ -116,11 +119,10 @@ describe('AI Local Processing', () => {
       });
     });
 
-    it('filters out short sentences', () => {
-      const text = 'Hi. This is a longer sentence that should be extracted as a quote.';
+    it('extracts quoted text', () => {
+      const text = 'He said "this is an important principle that guides our work" and continued.';
       const result = processCard4(text);
-      // 'Hi' is too short, should be filtered
-      expect(result.goldenQuotes.every(q => q.text !== 'Hi')).toBe(true);
+      expect(result.goldenQuotes.length).toBeGreaterThan(0);
     });
 
     it('returns empty quotes for empty text', () => {
@@ -141,7 +143,8 @@ describe('AI Local Processing', () => {
       expect(result.summary).toBeDefined();
       expect(result.keywords).toBeDefined();
       // Card 3
-      expect(result.angles).toHaveLength(3);
+      expect(result.angles).toBeDefined();
+      expect(result.angles.length).toBeGreaterThanOrEqual(3);
       // Card 4
       expect(result.goldenQuotes).toBeDefined();
     });

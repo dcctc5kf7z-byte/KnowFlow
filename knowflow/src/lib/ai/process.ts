@@ -4,13 +4,14 @@ import { processCardWithAPI, AIGenerateResult } from './api';
 import { withFallback } from './fallback';
 import { db } from '@/lib/db/dexie';
 import { useNodeStore } from '@/stores/nodeStore';
+import { extractWikiLinks, resolveWikiLinks, generateMarkdown } from '@/lib/utils/wikiLinks';
+import { useEntryStore } from '@/stores/entryStore';
 
 /** Extract the usable result — API wraps in AIGenerateResult, local returns LocalAIResult directly */
 function unwrapResult(result: AIGenerateResult<unknown> | LocalAIResult): LocalAIResult {
   if ('success' in result && result.success && result.data) {
     return result.data.result as LocalAIResult;
   }
-  // If it's already a LocalAIResult (from fallback) or API failed, use directly
   return result as LocalAIResult;
 }
 
@@ -35,6 +36,7 @@ export async function processEntry(
     );
     const data = unwrapResult(result);
     updates.category = data.category;
+    updates.subCategory = data.subCategory;
     updates.summary = data.summary;
     updates.keywords = data.keywords;
     updates.cardStatus = {
@@ -44,7 +46,7 @@ export async function processEntry(
   }
 
   // Card 3: Recommended Angles
-  if (scenario === 'deep_digest' || scenario === 'writing_material') {
+  if (scenario === 'deep_digest' || scenario === 'writing_material' || scenario === 'knowledge_link') {
     const { result, degraded } = await withFallback(
       () => processCardWithAPI('angles', entry.rawText),
       () => processLocally(entry.rawText)
@@ -76,18 +78,15 @@ export async function processEntry(
     const { createNode, nodes } = useNodeStore.getState();
 
     for (const keyword of keywords) {
-      // Check if node already exists
       const existingNode = nodes.find(n => n.label.toLowerCase() === keyword.toLowerCase());
       if (existingNode) {
         nodeIds.push(existingNode.id);
-        // Add this entry to the node's entryIds
         if (!existingNode.entryIds.includes(entry.id)) {
           await db.nodes.update(existingNode.id, {
             entryIds: [...existingNode.entryIds, entry.id],
           });
         }
       } else {
-        // Create new node
         const node = await createNode('keyword', keyword);
         nodeIds.push(node.id);
       }
@@ -95,6 +94,36 @@ export async function processEntry(
 
     updates.extractedNodes = nodeIds;
   }
+
+  // ─── Bidirectional Links (wiki-links) ────────────────────────────────────
+  const allEntries = useEntryStore.getState().entries;
+  const wikiLinks = extractWikiLinks(entry.rawText);
+  const resolved = resolveWikiLinks(wikiLinks, allEntries);
+
+  // Link this entry to the targets
+  const linkedIds = resolved
+    .filter(l => l.targetId !== null)
+    .map(l => l.targetId!);
+  updates.linkedEntryIds = [...new Set(linkedIds)];
+
+  // Update target entries to backlink to this entry
+  for (const link of resolved) {
+    if (link.targetId && link.targetId !== entry.id) {
+      const targetEntry = allEntries.find(e => e.id === link.targetId);
+      if (targetEntry) {
+        const existingLinks = targetEntry.linkedEntryIds || [];
+        if (!existingLinks.includes(entry.id)) {
+          await db.entries.update(link.targetId, {
+            linkedEntryIds: [...existingLinks, entry.id],
+          });
+        }
+      }
+    }
+  }
+
+  // ─── Generate Markdown Content ────────────────────────────────────────────
+  const processedEntry = { ...entry, ...updates };
+  updates.markdownContent = generateMarkdown(processedEntry as Entry, allEntries);
 
   return updates;
 }

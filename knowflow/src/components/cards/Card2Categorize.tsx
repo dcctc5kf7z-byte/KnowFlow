@@ -8,6 +8,9 @@ interface Card2Props {
 }
 
 export default function Card2Categorize({ entry, onUpdate }: Card2Props) {
+  const tags = entry.tags || [];
+  const keywords = entry.keywords || [];
+
   return (
     <div className="space-y-4">
       <div>
@@ -39,14 +42,14 @@ export default function Card2Categorize({ entry, onUpdate }: Card2Props) {
           Tags
         </label>
         <div className="flex flex-wrap gap-2">
-          {entry.tags.map(tag => (
+          {tags.map(tag => (
             <span
               key={tag}
               className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"
             >
               {tag}
               <button
-                onClick={() => onUpdate({ tags: entry.tags.filter(t => t !== tag) })}
+                onClick={() => onUpdate({ tags: tags.filter(t => t !== tag) })}
                 className="ml-1 text-blue-500 hover:text-blue-700"
               >
                 ×
@@ -59,7 +62,7 @@ export default function Card2Categorize({ entry, onUpdate }: Card2Props) {
           placeholder="Add tag and press Enter"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-              onUpdate({ tags: [...entry.tags, e.currentTarget.value.trim()] });
+              onUpdate({ tags: [...tags, e.currentTarget.value.trim()] });
               e.currentTarget.value = '';
             }
           }}
@@ -82,14 +85,14 @@ export default function Card2Categorize({ entry, onUpdate }: Card2Props) {
           Keywords
         </label>
         <div className="flex flex-wrap gap-2">
-          {entry.keywords.map(keyword => (
+          {keywords.map(keyword => (
             <span
               key={keyword}
               className="px-2 py-1 bg-green-100 text-green-700 rounded text-sm"
             >
               {keyword}
               <button
-                onClick={() => onUpdate({ keywords: entry.keywords.filter(k => k !== keyword) })}
+                onClick={() => onUpdate({ keywords: keywords.filter(k => k !== keyword) })}
                 className="ml-1 text-green-500 hover:text-green-700"
               >
                 ×

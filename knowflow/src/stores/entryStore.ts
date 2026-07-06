@@ -44,6 +44,8 @@ export const useEntryStore = create<EntryState>((set) => ({
     const now = new Date().toISOString();
     const entry: Entry = {
       ...entryData,
+      linkedEntryIds: entryData.linkedEntryIds || [],
+      markdownContent: entryData.markdownContent || '',
       id: crypto.randomUUID(),
       createdAt: now,
       updatedAt: now,

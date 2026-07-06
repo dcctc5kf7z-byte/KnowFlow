@@ -31,6 +31,20 @@ class KnowFlowDB extends Dexie {
       userSettings: 'userId',
       syncQueue: '++id, entityType, entityId, action, timestamp',
     });
+    this.version(2).stores({
+      entries: 'id, userId, category, createdAt, deletedAt, syncStatus',
+      nodes: 'id, userId, type, label, deletedAt, syncStatus',
+      links: 'id, userId, sourceNodeId, targetNodeId, syncStatus',
+      drafts: 'id, userId, createdAt, expiresAt',
+      userSettings: 'userId',
+      syncQueue: '++id, entityType, entityId, action, timestamp',
+    }).upgrade(async (tx) => {
+      // Add linkedEntryIds and markdownContent to existing entries
+      await tx.table('entries').toCollection().modify(entry => {
+        entry.linkedEntryIds = entry.linkedEntryIds || [];
+        entry.markdownContent = entry.markdownContent || '';
+      });
+    });
   }
 }
 

@@ -25,15 +25,16 @@ export async function exportAsMarkdown(): Promise<string> {
   entries.forEach(entry => {
     markdown += `## ${entry.title}\n\n`;
     markdown += `**Category:** ${entry.category}\n`;
-    markdown += `**Tags:** ${entry.tags.join(', ')}\n`;
+    markdown += `**Tags:** ${(entry.tags || []).join(', ')}\n`;
     markdown += `**Created:** ${entry.createdAt}\n\n`;
     markdown += `### Raw Text\n\n${entry.rawText}\n\n`;
     if (entry.summary) {
       markdown += `### Summary\n\n${entry.summary}\n\n`;
     }
-    if (entry.goldenQuotes.length > 0) {
+    const quotes = entry.goldenQuotes || [];
+    if (quotes.length > 0) {
       markdown += `### Golden Quotes\n\n`;
-      entry.goldenQuotes.forEach(quote => {
+      quotes.forEach(quote => {
         markdown += `> ${quote.text}\n\n`;
       });
     }

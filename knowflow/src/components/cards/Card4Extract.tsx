@@ -8,8 +8,11 @@ interface Card4Props {
 }
 
 export default function Card4Extract({ entry, onUpdate }: Card4Props) {
+  const goldenQuotes = entry.goldenQuotes || [];
+  const extractedNodes = entry.extractedNodes || [];
+
   const removeQuote = (quoteId: string) => {
-    onUpdate({ goldenQuotes: entry.goldenQuotes.filter(q => q.id !== quoteId) });
+    onUpdate({ goldenQuotes: goldenQuotes.filter(q => q.id !== quoteId) });
   };
 
   return (
@@ -19,7 +22,7 @@ export default function Card4Extract({ entry, onUpdate }: Card4Props) {
           Golden Quotes
         </label>
         <div className="space-y-2">
-          {entry.goldenQuotes.map(quote => (
+          {goldenQuotes.map(quote => (
             <div key={quote.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="text-sm italic text-gray-800">&ldquo;{quote.text}&rdquo;</div>
               {quote.context && (
@@ -34,7 +37,7 @@ export default function Card4Extract({ entry, onUpdate }: Card4Props) {
             </div>
           ))}
         </div>
-        {entry.goldenQuotes.length === 0 && (
+        {goldenQuotes.length === 0 && (
           <div className="text-center text-gray-500 py-4">
             No quotes extracted yet. Process this card to extract golden quotes.
           </div>
@@ -45,9 +48,9 @@ export default function Card4Extract({ entry, onUpdate }: Card4Props) {
           Connected Nodes
         </label>
         <div className="text-sm text-gray-600">
-          {entry.extractedNodes.length > 0 ? (
+          {extractedNodes.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {entry.extractedNodes.map(nodeId => (
+              {extractedNodes.map(nodeId => (
                 <span
                   key={nodeId}
                   className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm"

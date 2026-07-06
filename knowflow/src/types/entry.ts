@@ -34,6 +34,8 @@ export interface Entry {
   userId: string;
   title: string;
   rawText: string;
+  /** Markdown-formatted content for rich rendering */
+  markdownContent?: string;
   language: string;
   sourceUrl?: string;
   sourceType?: 'paste' | 'url' | 'file' | 'manual';
@@ -45,6 +47,8 @@ export interface Entry {
   angles: Angle[];
   goldenQuotes: GoldenQuote[];
   extractedNodes: string[];
+  /** IDs of entries linked via [[wiki-links]] */
+  linkedEntryIds: string[];
   cardStatus: CardStatus;
   scenario: ProcessingScenario;
   processingMode: 'local' | 'api';
@@ -52,4 +56,14 @@ export interface Entry {
   updatedAt: string;
   deletedAt?: string;
   syncStatus: SyncStatus;
+}
+
+/** A backlink — an entry that references the current entry */
+export interface Backlink {
+  entryId: string;
+  entryTitle: string;
+  /** The context sentence where the link appears */
+  context: string;
+  /** Offset of the link reference in the source text */
+  offset: number;
 }

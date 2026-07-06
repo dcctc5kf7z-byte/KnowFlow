@@ -8,8 +8,10 @@ interface Card3Props {
 }
 
 export default function Card3Angles({ entry, onUpdate }: Card3Props) {
+  const angles = entry.angles || [];
+
   const toggleAngle = (angleId: string) => {
-    const updatedAngles = entry.angles.map(angle =>
+    const updatedAngles = angles.map(angle =>
       angle.id === angleId ? { ...angle, selected: !angle.selected } : angle
     );
     onUpdate({ angles: updatedAngles });
@@ -21,7 +23,7 @@ export default function Card3Angles({ entry, onUpdate }: Card3Props) {
         Select angles that interest you (optional):
       </div>
       <div className="space-y-2">
-        {entry.angles.map(angle => (
+        {angles.map(angle => (
           <label
             key={angle.id}
             className={`block p-3 border rounded-lg cursor-pointer ${
@@ -47,7 +49,7 @@ export default function Card3Angles({ entry, onUpdate }: Card3Props) {
           </label>
         ))}
       </div>
-      {entry.angles.length === 0 && (
+      {angles.length === 0 && (
         <div className="text-center text-gray-500 py-4">
           No angles generated yet. Process this card to get recommendations.
         </div>

@@ -6,10 +6,19 @@ import { Entry } from '@/types/entry';
 function makeEntry(overrides: Partial<Entry> = {}): Entry {
   return {
     id: 'test-id-1',
+    userId: '',
     rawText: 'Test raw text',
     title: 'Test Title',
     language: 'en',
     tags: ['test'],
+    category: '',
+    summary: '',
+    keywords: [],
+    angles: [],
+    goldenQuotes: [],
+    extractedNodes: [],
+    linkedEntryIds: [],
+    markdownContent: '',
     cardStatus: { card1: 'completed', card2: 'pending', card3: 'pending', card4: 'pending' },
     scenario: 'quick_capture',
     processingMode: 'local',
@@ -29,11 +38,20 @@ describe('entryStore', () => {
   describe('createEntry', () => {
     it('creates an entry with generated id and timestamps', async () => {
       const entryData = {
+        userId: '',
         rawText: 'Hello world',
         title: '',
         language: 'en',
         tags: [],
-        cardStatus: { card1: 'pending', card2: 'pending', card3: 'pending', card4: 'pending' },
+        category: '',
+        summary: '',
+        keywords: [],
+        angles: [],
+        goldenQuotes: [],
+        extractedNodes: [],
+        linkedEntryIds: [],
+        markdownContent: '',
+        cardStatus: { card1: 'pending' as const, card2: 'pending' as const, card3: 'pending' as const, card4: 'pending' as const },
         scenario: 'quick_capture' as const,
         processingMode: 'local' as const,
       };
@@ -50,11 +68,20 @@ describe('entryStore', () => {
 
     it('adds entry to state', async () => {
       const entryData = {
+        userId: '',
         rawText: 'Test',
         title: '',
         language: 'en',
         tags: [],
-        cardStatus: { card1: 'pending', card2: 'pending', card3: 'pending', card4: 'pending' },
+        category: '',
+        summary: '',
+        keywords: [],
+        angles: [],
+        goldenQuotes: [],
+        extractedNodes: [],
+        linkedEntryIds: [],
+        markdownContent: '',
+        cardStatus: { card1: 'pending' as const, card2: 'pending' as const, card3: 'pending' as const, card4: 'pending' as const },
         scenario: 'quick_capture' as const,
         processingMode: 'local' as const,
       };
@@ -67,11 +94,20 @@ describe('entryStore', () => {
 
     it('persists entry to Dexie', async () => {
       const entryData = {
+        userId: '',
         rawText: 'Persisted',
         title: '',
         language: 'en',
         tags: [],
-        cardStatus: { card1: 'pending', card2: 'pending', card3: 'pending', card4: 'pending' },
+        category: '',
+        summary: '',
+        keywords: [],
+        angles: [],
+        goldenQuotes: [],
+        extractedNodes: [],
+        linkedEntryIds: [],
+        markdownContent: '',
+        cardStatus: { card1: 'pending' as const, card2: 'pending' as const, card3: 'pending' as const, card4: 'pending' as const },
         scenario: 'quick_capture' as const,
         processingMode: 'local' as const,
       };
