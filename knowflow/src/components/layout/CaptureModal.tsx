@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import WikiLinkAutocomplete from '@/components/ui/WikiLinkAutocomplete';
 import { useUIStore } from '@/stores/uiStore';
 import { useEntryStore } from '@/stores/entryStore';
 import { useI18n } from '@/lib/i18n';
@@ -12,8 +13,15 @@ import { processEntry } from '@/lib/ai/process';
 
 export default function CaptureModal() {
   const { isCaptureOpen, toggleCapture } = useUIStore();
-  const { createEntry, updateEntry } = useEntryStore();
+  const { createEntry, updateEntry, loadEntries } = useEntryStore();
   const { t } = useI18n();
+
+  // Load entries when modal opens (for wiki-link autocomplete)
+  useEffect(() => {
+    if (isCaptureOpen) {
+      loadEntries();
+    }
+  }, [isCaptureOpen, loadEntries]);
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [rawText, setRawText] = useState('');
@@ -75,11 +83,12 @@ export default function CaptureModal() {
     >
       {step === 1 ? (
         <div className="space-y-4">
-          <textarea
+          <WikiLinkAutocomplete
             value={rawText}
-            onChange={(e) => setRawText(e.target.value)}
+            onChange={setRawText}
             placeholder={t('capture.placeholder')}
             className="w-full h-40 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={6}
           />
           <div className="flex gap-2">
             {(['paste', 'url', 'file', 'manual'] as const).map(type => (
